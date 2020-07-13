@@ -1,0 +1,17 @@
+config SND_SOC_BERLIN
+        tristate "SoC Audio for the BERLIN chip"
+        select SND_ARM
+        select SND_BERLIN_LIB
+        select SND_HWDEP
+
+config SND_SOC_BERLIN_HW_VOL_CTRL
+        bool "Hardware power amplifier volume control"
+        help
+          Say Y only on pineapple, mushroom, or coco.
+          Pepperoni does not have the power amp.
+
+config SND_SOC_BERLIN_SLOWER_16KHZ_PDM_CLOCK
+        bool "1.536 MHz PDM clock for 16kHz capture"
+        help
+          Say Y only on mushroom or coco.
+          Used to force PDM clock into an in-spec range for the mushroom microphones.
