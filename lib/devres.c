@@ -2,6 +2,7 @@
 #include <linux/io.h>
 #include <linux/gfp.h>
 #include <linux/export.h>
+#include <linux/err.h>
 
 void devm_ioremap_release(struct device *dev, void *res)
 {

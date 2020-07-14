@@ -204,6 +204,8 @@ static inline void cpu_hotplug_driver_unlock(void)
 #define unregister_hotcpu_notifier(nb)	({ (void)(nb); })
 #endif		/* CONFIG_HOTPLUG_CPU */
 
+void cpu_yield_to_irqs(void);
+
 #ifdef CONFIG_PM_SLEEP_SMP
 extern int disable_nonboot_cpus(void);
 extern void enable_nonboot_cpus(void);

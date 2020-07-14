@@ -197,7 +197,7 @@ SYSCALL_DEFINE2(ftruncate, unsigned int, fd, unsigned long, length)
 
 /* LFS versions of truncate are only needed on 32 bit machines */
 #if BITS_PER_LONG == 32
-SYSCALL_DEFINE(truncate64)(const char __user * path, loff_t length)
+SYSCALL_DEFINE2(truncate64, const char __user *, path, loff_t, length)
 {
 	return do_sys_truncate(path, length);
 }
@@ -209,7 +209,7 @@ asmlinkage long SyS_truncate64(long path, loff_t length)
 SYSCALL_ALIAS(sys_truncate64, SyS_truncate64);
 #endif
 
-SYSCALL_DEFINE(ftruncate64)(unsigned int fd, loff_t length)
+SYSCALL_DEFINE2(ftruncate64, unsigned int, fd, loff_t, length)
 {
 	long ret = do_sys_ftruncate(fd, length, 0);
 	/* avoid REGPARM breakage on x86: */
@@ -284,7 +284,7 @@ int do_fallocate(struct file *file, int mode, loff_t offset, loff_t len)
 	return ret;
 }
 
-SYSCALL_DEFINE(fallocate)(int fd, int mode, loff_t offset, loff_t len)
+SYSCALL_DEFINE4(fallocate, int, fd, int, mode, loff_t, offset, loff_t, len)
 {
 	struct fd f = fdget(fd);
 	int error = -EBADF;

@@ -1120,7 +1120,7 @@ out_up:
 	return err;
 }
 
-SYSCALL_DEFINE(semctl)(int semid, int semnum, int cmd, union semun arg)
+SYSCALL_DEFINE4(semctl, int, semid, int, semnum, int, cmd, union semun, arg)
 {
 	int err = -EINVAL;
 	int version;

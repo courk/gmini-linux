@@ -91,6 +91,11 @@ void put_online_cpus(void)
 }
 EXPORT_SYMBOL_GPL(put_online_cpus);
 
+void __weak cpu_yield_to_irqs(void)
+{
+}
+EXPORT_SYMBOL(cpu_yield_to_irqs);
+
 /*
  * This ensures that the hotplug operation can begin only when the
  * refcount goes to zero.

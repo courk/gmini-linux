@@ -2,7 +2,7 @@ config RC_CORE
 	tristate
 	depends on MEDIA_RC_SUPPORT
 	depends on INPUT
-	default y
+	default n
 
 source "drivers/media/rc/keymaps/Kconfig"
 

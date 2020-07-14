@@ -173,6 +173,10 @@ extern struct trace_event_functions exit_syscall_print_funcs;
 	  __attribute__((section("__syscalls_metadata")))	\
 	 *__p_syscall_meta_##sname = &__syscall_meta_##sname;
 
+#ifndef __SYSCALL_DEFINE_ARCH
+#define __SYSCALL_DEFINE_ARCH(x, sname, ...)
+#endif
+
 #define SYSCALL_DEFINE0(sname)					\
 	SYSCALL_TRACE_ENTER_EVENT(_##sname);			\
 	SYSCALL_TRACE_EXIT_EVENT(_##sname);			\
@@ -188,9 +192,12 @@ extern struct trace_event_functions exit_syscall_print_funcs;
 	static struct syscall_metadata __used			\
 	  __attribute__((section("__syscalls_metadata")))	\
 	 *__p_syscall_meta_##sname = &__syscall_meta__##sname;	\
+	__SYSCALL_DEFINE_ARCH(0, _##sname);			\
 	asmlinkage long sys_##sname(void)
 #else
-#define SYSCALL_DEFINE0(name)	   asmlinkage long sys_##name(void)
+#define SYSCALL_DEFINE0(sname)					\
+	__SYSCALL_DEFINE_ARCH(0, _##sname);			\
+	asmlinkage long sys_##sname(void)
 #endif
 
 #define SYSCALL_DEFINE1(name, ...) SYSCALL_DEFINEx(1, _##name, __VA_ARGS__)
@@ -223,9 +230,11 @@ extern struct trace_event_functions exit_syscall_print_funcs;
 		__SC_STR_ADECL##x(__VA_ARGS__)			\
 	};							\
 	SYSCALL_METADATA(sname, x);				\
+	__SYSCALL_DEFINE_ARCH(x, sname, __VA_ARGS__)		\
 	__SYSCALL_DEFINEx(x, sname, __VA_ARGS__)
 #else
 #define SYSCALL_DEFINEx(x, sname, ...)				\
+	__SYSCALL_DEFINE_ARCH(x, sname, __VA_ARGS__)		\
 	__SYSCALL_DEFINEx(x, sname, __VA_ARGS__)
 #endif
 
@@ -246,7 +255,10 @@ extern struct trace_event_functions exit_syscall_print_funcs;
 
 #else /* CONFIG_HAVE_SYSCALL_WRAPPERS */
 
-#define SYSCALL_DEFINE(name) asmlinkage long sys_##name
+#define SYSCALL_DEFINE(name)    \
+ __SYSCALL_DEFINE_ARCH_(_##name); \
+ asmlinkage long sys_##name
+
 #define __SYSCALL_DEFINEx(x, name, ...)					\
 	asmlinkage long sys##name(__SC_DECL##x(__VA_ARGS__))
 

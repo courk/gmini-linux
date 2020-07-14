@@ -1163,7 +1163,7 @@ static void print_fatal_signal(int signr)
 	printk("%s/%d: potentially unexpected fatal signal %d.\n",
 		current->comm, task_pid_nr(current), signr);
 
-#if defined(__i386__) && !defined(__arch_um__)
+#ifdef CONFIG_X86_32
 	printk("code at %08lx: ", regs->ip);
 	{
 		int i;
@@ -3094,12 +3094,12 @@ do_sigaltstack (const stack_t __user *uss, stack_t __user *uoss, unsigned long s
 out:
 	return error;
 }
-#ifdef CONFIG_GENERIC_SIGALTSTACK
+//#ifdef CONFIG_GENERIC_SIGALTSTACK
 SYSCALL_DEFINE2(sigaltstack,const stack_t __user *,uss, stack_t __user *,uoss)
 {
 	return do_sigaltstack(uss, uoss, current_user_stack_pointer());
 }
-#endif
+//#endif
 
 int restore_altstack(const stack_t __user *uss)
 {

@@ -470,6 +470,7 @@ static int create_bbt(struct mtd_info *mtd, uint8_t *buf,
 	size_t readlen;
 
 	pr_info("Scanning device for bad blocks\n");
+	return 0;
 
 	if (bd->options & NAND_BBT_SCANALLPAGES)
 		numpages = 1 << (this->bbt_erase_shift - this->page_shift);
@@ -1407,6 +1408,8 @@ int nand_isbad_bbt(struct mtd_info *mtd, loff_t offs, int allowbbt)
 	uint8_t res;
 	int mtd_type;
 	loff_t dst;
+
+	return 0;
 
 	/* Get block number * 2 */
 	mtd_type = this->get_mtd_info(mtd, offs, &dst);

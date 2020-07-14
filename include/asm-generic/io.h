@@ -293,10 +293,13 @@ static inline void *phys_to_virt(unsigned long address)
  * you'll need to provide your own definitions.
  */
 #ifndef CONFIG_MMU
+#ifndef ioremap
+#define ioremap ioremap
 static inline void __iomem *ioremap(phys_addr_t offset, unsigned long size)
 {
 	return (void __iomem*) (unsigned long)offset;
 }
+#endif
 
 #define __ioremap(offset, size, flags)	ioremap(offset, size)
 

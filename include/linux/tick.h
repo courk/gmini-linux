@@ -148,4 +148,6 @@ extern void menu_hrtimer_cancel(void);
 static inline void menu_hrtimer_cancel(void) {}
 # endif /* CONFIG_CPU_IDLE_GOV_MENU */
 
+void tick_suspend_local(void);
+
 #endif

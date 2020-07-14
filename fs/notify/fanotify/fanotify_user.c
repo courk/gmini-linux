@@ -755,9 +755,9 @@ out_destroy_group:
 	return fd;
 }
 
-SYSCALL_DEFINE(fanotify_mark)(int fanotify_fd, unsigned int flags,
-			      __u64 mask, int dfd,
-			      const char  __user * pathname)
+SYSCALL_DEFINE5(fanotify_mark, int, fanotify_fd, unsigned int, flags,
+			      __u64, mask, int, dfd,
+			      const char  __user *, pathname)
 {
 	struct inode *inode = NULL;
 	struct vfsmount *mnt = NULL;

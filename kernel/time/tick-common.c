@@ -339,6 +339,13 @@ static void tick_suspend(void)
 	raw_spin_unlock_irqrestore(&tick_device_lock, flags);
 }
 
+void tick_suspend_local(void)
+{
+	struct tick_device *td = &__get_cpu_var(tick_cpu_device);
+
+	clockevents_shutdown(td->evtdev);
+}
+
 static void tick_resume(void)
 {
 	struct tick_device *td = &__get_cpu_var(tick_cpu_device);
