@@ -107,6 +107,7 @@ static char *weakblocks = NULL;
 static char *weakpages = NULL;
 static unsigned int bitflips = 0;
 static char *gravepages = NULL;
+static uint cache_file_written = 0;
 static unsigned int overridesize = 0;
 static char *cache_file = NULL;
 static unsigned int bbt;
@@ -133,6 +134,7 @@ module_param(bitflips,       uint, 0400);
 module_param(gravepages,     charp, 0400);
 module_param(overridesize,   uint, 0400);
 module_param(cache_file,     charp, 0400);
+module_param(cache_file_written, uint, 0400);
 module_param(bbt,	     uint, 0400);
 module_param(bch,	     uint, 0400);
 
@@ -166,6 +168,7 @@ MODULE_PARM_DESC(overridesize,   "Specifies the NAND Flash size overriding the I
 				 "The size is specified in erase blocks and as the exponent of a power of two"
 				 " e.g. 5 means a size of 32 erase blocks");
 MODULE_PARM_DESC(cache_file,     "File to use to cache nand pages instead of memory");
+MODULE_PARM_DESC(cache_file_written, "Assume any pages in cache file have already been written, use their existing contents");
 MODULE_PARM_DESC(bbt,		 "0 OOB, 1 BBT with marker in OOB, 2 BBT with marker in data area");
 MODULE_PARM_DESC(bch,		 "Enable BCH ecc and set how many bits should "
 				 "be correctable in 512-byte blocks");
@@ -595,6 +598,9 @@ static int alloc_device(struct nandsim *ns)
 			NS_ERR("alloc_device: unable to allocate pages written array\n");
 			err = -ENOMEM;
 			goto err_close;
+		}
+		if (cache_file_written) {
+			memset(ns->pages_written, 0xFF, ns->geom.pgnum);
 		}
 		ns->file_buf = kmalloc(ns->geom.pgszoob, GFP_KERNEL);
 		if (!ns->file_buf) {
@@ -1513,7 +1519,17 @@ static void read_page(struct nandsim *ns, int num)
 			pos = (loff_t)ns->regs.row * ns->geom.pgszoob + ns->regs.column + ns->regs.off;
 			tx = read_file(ns, ns->cfile, ns->buf.byte, num, &pos);
 			if (tx != num) {
-				NS_ERR("read_page: read error for page %d ret %ld\n", ns->regs.row, (long)tx);
+				if (ns->pages_written[ns->regs.row] == 0xFF) {
+					NS_WARN("read_page: read error assuming unwritten for page %d ret %ld\n", ns->regs.row, (long)tx);
+					ns->pages_written[ns->regs.row] = 0;
+					memset(ns->buf.byte, 0xFF, num);
+					tx = write_file(ns, ns->cfile, ns->buf.byte, num, &pos);
+					if (tx != num) {
+						NS_ERR("read_page: write error for page %d ret %ld\n", ns->regs.row, (long)tx);
+					}
+				} else {
+					NS_ERR("read_page: read error for page %d ret %ld\n", ns->regs.row, (long)tx);
+				}
 				return;
 			}
 			do_bit_flips(ns, num);
@@ -1543,14 +1559,25 @@ static void erase_sector(struct nandsim *ns)
 	union ns_mem *mypage;
 	int i;
 
-	if (ns->cfile) {
-		for (i = 0; i < ns->geom.pgsec; i++)
-			if (ns->pages_written[ns->regs.row + i]) {
-				NS_DBG("erase_sector: freeing page %d\n", ns->regs.row + i);
-				ns->pages_written[ns->regs.row + i] = 0;
-			}
-		return;
-	}
+  	if (ns->cfile) {
+		loff_t pos;
+		ssize_t tx;
+ 
+		memset(ns->file_buf, 0xff, ns->geom.pgszoob);
+		for (i = 0; i < ns->geom.pgsec; i++) {
+  			if (__test_and_clear_bit(ns->regs.row + i,
+  						 ns->pages_written)) {
+  				NS_DBG("erase_sector: freeing page %d\n", ns->regs.row + i);
+				pos = (loff_t)(ns->regs.row + i) * ns->geom.pgszoob;
+				tx = write_file(ns, ns->cfile, ns->file_buf, ns->geom.pgszoob, &pos);
+				if (tx != ns->geom.pgszoob) {
+					NS_ERR("erase_sector: write error for page %d ret %ld\n", ns->regs.row, (long)tx);
+				}
+ 			}
+			ns->pages_written[ns->regs.row + i] = 0;
+		}
+  		return;
+  	}
 
 	mypage = NS_GET_PAGE(ns);
 	for (i = 0; i < ns->geom.pgsec; i++) {
@@ -1588,8 +1615,15 @@ static int prog_page(struct nandsim *ns, int num)
 			pos = off;
 			tx = read_file(ns, ns->cfile, pg_off, num, &pos);
 			if (tx != num) {
-				NS_ERR("prog_page: read error for page %d ret %ld\n", ns->regs.row, (long)tx);
-				return -1;
+				if (ns->pages_written[ns->regs.row] == 0xFF) {
+					NS_WARN("prog_page: read error assuming unwritten for page %d ret %ld\n", ns->regs.row, (long)tx);
+					ns->pages_written[ns->regs.row] = 0;
+					all = 1;
+					memset(ns->file_buf, 0xff, ns->geom.pgszoob);
+				} else {
+					NS_ERR("prog_page: read error for page %d ret %ld\n", ns->regs.row, (long)tx);
+					return -1;
+				}
 			}
 		}
 		for (i = 0; i < num; i++)

@@ -1408,6 +1408,8 @@ int nand_isbad_bbt(struct mtd_info *mtd, loff_t offs, int allowbbt)
 	int mtd_type;
 	loff_t dst;
 
+	return 0;
+
 	/* Get block number * 2 */
 	mtd_type = this->get_mtd_info(mtd, offs, &dst);
 	if ((mtd_type == MTD_ESLC) || (mtd_type == MTD_SLC)) {
